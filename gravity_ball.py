@@ -1,180 +1,151 @@
-import pygame
-import os
-import time
+import pygame, sys, os
 
-os.environ['SDL_VIDEO_CENTERED'] = '1'
+os.environ["SDL_VIDEO_CENTERED"] = "1"
 
 pygame.init()
 
-WIDTH = 1000
+# Game constants
+WIDTH = 1080
 HEIGHT = 600
-BALL_RADIUS = 20
-PLATFORM_HEIGHT = 1
-PLATFORM_WIDTH = 200
-PLATFORM_VER_GAP = 50
-PLATFORM_HOR_GAP = 75
-FPS = 100
-GRAVITY = 2000
-INITIAL_VER_VEL = -750
-VER_VEL = 0
-BALL_HOR_VEL = 2
-MAX_HEIGHT = (INITIAL_VER_VEL**2) / (2*GRAVITY)
 
 
-WHITE = (255,255,255)
 BLACK = (0,0,0)
-YELLOW = (255,255,0)
+WHITE = (255,255,255)
 RED = (255,0,0)
-BLUE = (0,0,255)
-GREEN = (0,255,0)
-ORANGE = (255, 165, 0)
 
 
-gameDisplay = pygame.display.set_mode((WIDTH, HEIGHT))
+PLATFORM_WIDTH = 200
+PLATFORM_HEIGHT = 1
+PLATFORM_VER_GAP = 100
+PLATFORM_HOR_GAP = 50
+GAP = 50
 
-PLATFORM_1 = pygame.Rect(0 + 20, HEIGHT - PLATFORM_HEIGHT - 200, PLATFORM_WIDTH, PLATFORM_HEIGHT)
+BALL_RADIUS = 20
+BALL_X_SPEED = 7
+# JUMP_NUMBER = 0
+# MAX_JUMP_NUMBER = 2 # giving the ball a double jump feature
+J_COUNT = 7
+MAX_J_COUNT = 7 # this is like the initial speed we are giving to the ball
+MUL_FACTOR = 1/2
+IS_JUMP = False
 
-PLATFORM_0 = pygame.Rect(0 , PLATFORM_1.y + MAX_HEIGHT, WIDTH, PLATFORM_HEIGHT)
-
-PLATFORM_2 = pygame.Rect(PLATFORM_1.x + PLATFORM_WIDTH + PLATFORM_HOR_GAP, PLATFORM_1.y - MAX_HEIGHT + PLATFORM_HEIGHT + PLATFORM_VER_GAP, PLATFORM_WIDTH, PLATFORM_HEIGHT)
-
-PLATFORM_3 = pygame.Rect(PLATFORM_2.x + PLATFORM_WIDTH + PLATFORM_HOR_GAP, PLATFORM_2.y - MAX_HEIGHT + PLATFORM_HEIGHT + PLATFORM_VER_GAP, PLATFORM_WIDTH, PLATFORM_HEIGHT)
-
-PLATFORM_4 = pygame.Rect(PLATFORM_3.x + PLATFORM_WIDTH + PLATFORM_HOR_GAP, PLATFORM_2.y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
-
-PLATFORM_5 = pygame.Rect(PLATFORM_2.x, PLATFORM_3.y - MAX_HEIGHT + PLATFORM_HEIGHT + PLATFORM_VER_GAP, PLATFORM_WIDTH, PLATFORM_HEIGHT)
-
-LIST_PLATFORM = [PLATFORM_0 ,PLATFORM_1, PLATFORM_2, PLATFORM_3, PLATFORM_4, PLATFORM_5]
-
-
-
+FPS = 60
 
 
-#----------------------code for working on terminal----------
-final_path = os.getcwd()
-path_list = final_path.split("\\")
-# print(final_path)
-final_path = final_path + "\\"
-if path_list[-1] == "gravity_ball" or  path_list[-1] == "gravity_ball-master":
-    pass
-#----------------------code for working on terminal----------
+PLATFORM_0 = pygame.Rect(0, HEIGHT -100 , WIDTH, PLATFORM_HEIGHT+20) # Ball initially on platform 0
 
-#----------------------code for working on vs code----------
-else:
-    final_path = os.path.dirname(__file__) + "\\"
-    # print(final_path)
-#----------------------code for working on vs code----------
+PLATFORM_1 = pygame.Rect(PLATFORM_0.x , PLATFORM_0.y - PLATFORM_VER_GAP- PLATFORM_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT)
 
+PLATFORM_2 = pygame.Rect(PLATFORM_1.x + PLATFORM_WIDTH + PLATFORM_HOR_GAP + GAP, PLATFORM_1.y - PLATFORM_VER_GAP- PLATFORM_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT)
 
+PLATFORM_3 = pygame.Rect(PLATFORM_2.x + PLATFORM_WIDTH + PLATFORM_HOR_GAP + GAP, PLATFORM_2.y - PLATFORM_VER_GAP- PLATFORM_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT)
 
+PLATFORM_4 = pygame.Rect(PLATFORM_3.x + PLATFORM_WIDTH + PLATFORM_HOR_GAP + GAP, PLATFORM_2.y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
 
-file1 = open(final_path + "log_vel_x_y.txt", "w")
-file1.write("")
-file1.close()
-file1 = open(final_path + "log_vel_x_y.txt", "a")
+PLATFORM_5 = pygame.Rect(PLATFORM_2.x, PLATFORM_3.y - PLATFORM_VER_GAP- PLATFORM_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT)
 
+LIST_PLATFORMS = [PLATFORM_0 ,PLATFORM_1, PLATFORM_2, PLATFORM_3, PLATFORM_4, PLATFORM_5]
 
 
 class Ball():
     def __init__(self):
-        self.x = 0 + 20 + BALL_RADIUS # initial position
-        self.y = PLATFORM_1.y - BALL_RADIUS# initial position  # Will be placed on platform 1
-        self.initial_y = PLATFORM_1.y -BALL_RADIUS
-        self.ver_vel = 0
-        self.on_platform = PLATFORM_1
-        self.time = 0
+        self.x = PLATFORM_0.x + BALL_RADIUS
+        self.y = PLATFORM_0.y - BALL_RADIUS
+        self.platform = PLATFORM_0
+
+    def hor_movement(self, keys_pressed):
+        global J_COUNT
+        global IS_JUMP
+        if keys_pressed[pygame.K_a] and self.x - BALL_RADIUS > 0:
+            self.x -= BALL_X_SPEED
+            if (self.x not in range(self.platform.x, self.platform.x + self.platform.width)) and not(IS_JUMP) and J_COUNT==MAX_J_COUNT:
+                J_COUNT = 0
+                IS_JUMP = True
+        if keys_pressed[pygame.K_d] and self.x + BALL_RADIUS < WIDTH:
+            self.x += BALL_X_SPEED
+            if (self.x not in range(self.platform.x, self.platform.x + self.platform.width)) and not(IS_JUMP) and J_COUNT==MAX_J_COUNT:
+                J_COUNT = 0
+                IS_JUMP = True
 
 
-    def ball_hor_movement(self, keys_pressed): # Horizontal movement
-        if keys_pressed[pygame.K_a] and ((self.x -BALL_RADIUS) > 0):
-                self.x -= BALL_HOR_VEL
-        if keys_pressed[pygame.K_d] and (self.x + BALL_RADIUS < WIDTH):
-                self.x += BALL_HOR_VEL
-        
-        if self.ver_vel == 0:
-            if not(self.on_platform.x < self.x < self.on_platform.x + self.on_platform.width):
-                # Then should add a y-component to the speed and it should start falling down
-                time_count = time.time()
-                self.ball_ver_movement(time_count, 2) # fall down
+    def ver_movement(self):
+        global IS_JUMP
+        global J_COUNT
 
 
-    def ball_ver_movement(self, time_count, num = 0): # Vertical movement
-        global VER_VEL
-
-        if(num == 1): # provide the ball with a jump from the platform
-            self.ver_vel = INITIAL_VER_VEL
-            self.time = time_count # Initial time recording
-            VER_VEL = INITIAL_VER_VEL
-            file1.write(f"\n\n\n\nTHIS IS A JUMP-----vertical velocity = {self.ver_vel}\n\n\n\n")
-
-        elif(num == 2): # provide the ball with a fall from the platform
-            self.ver_vel = 1
-            self.time =time_count
-            VER_VEL = 1
-            file1.write(f"\n\n\n\nTHIS IS A FALL-----vertical velocity = {self.ver_vel}\n\n\n\n")
-
-        else:
-            list_check = self.ball_plat_collision(LIST_PLATFORM)
-            if list_check[0]: # if the ball hits the platform
-                self.y = list_check[1].y -BALL_RADIUS
-                self.initial_y = list_check[1].y -BALL_RADIUS # Initial y on new platform
-                self.on_platform = list_check[1]
-                self.ver_vel = 0
-                file1.write("\n\n\n\nHITS THE PLATFORM\n\n\n\n")
-            else: # '<=' case
-                t = time_count - self.time
-                self.y = self.initial_y + (VER_VEL * t) + (1/2)*GRAVITY*(t**2) # s = (u*t) + (1/2)*(a)*(t**2)
-                self.ver_vel = VER_VEL + (GRAVITY * t) # v = u + a*t
-                # print(f"self.ver_vel = {self.ver_vel}, self.y ={self.y}")
-                file1.write(f"self.ver_vel = {self.ver_vel}, self.x ={self.x}, self.y ={self.y}\n\n")
-
-    
-    def ball_plat_collision(self, list_platform):
-        i = len(list_platform) - 1
-        while i >= 0:
-            if (list_platform[i].x) < (self.x) < (list_platform[i].x + list_platform[i].width):
-                if((list_platform[i].y)< (self.y + BALL_RADIUS) < (list_platform[i].y + PLATFORM_HEIGHT + BALL_RADIUS)):
-                    return [True, list_platform[i]]
-            i -= 1
-        return [False, 0]
+        if (IS_JUMP == True):
+            if J_COUNT >= -MAX_J_COUNT:
+                neg = -1 # velocity is in the negative direction of y
+                if(J_COUNT < 0):
+                    neg = 1 # velocity is in the positive direction of y
+                self.y += (J_COUNT ** 2) * MUL_FACTOR * neg
+                J_COUNT -= 0.5 # we can change the gravity of the jump by changing the value we subtract here
+                            # example if we change it like J_COUNT -= 0.5 gravity of the jump decreases
+                            # example if we change it like J_COUNT -= 2 gravity of the jump increases
+            else:
+                self.y += (J_COUNT ** 2) * MUL_FACTOR # the last J_COUNT
+        if self.ball_plat_collision(): # Till the ball collides with one of the platforms IS_JUMP is True
+            # Once it hits any platform we are gonna reset the JUMP_NUMBER to 0 and J_COUNT to 10
+            IS_JUMP = False
+            J_COUNT = MAX_J_COUNT
+            return 1
 
 
+    def ball_plat_collision(self):
+        ball_rect = pygame.Rect(self.x - BALL_RADIUS/2, self.y - BALL_RADIUS, BALL_RADIUS, BALL_RADIUS)
+        # in ball_rect we are checking if the middle part of the ball is colliding with any platform
+        for platform in LIST_PLATFORMS:
+            
+            if self.x in range(platform.x - BALL_RADIUS, platform.x + platform.width):
+                if(ball_rect.colliderect(platform)): #collided into the platform
+                    self.y = platform.y - BALL_RADIUS
+                    self.platform = platform
+                    return True
+        return False
 
-def draw_display(gameDisplay, ball, list_platform):
+
+def draw_display(ball):
     gameDisplay.fill(BLACK)
-    for platform in list_platform: # draw all the platforms
+
+    for platform in LIST_PLATFORMS:
         pygame.draw.rect(gameDisplay, WHITE, platform)
-    pygame.draw.circle(gameDisplay, RED, (int(ball.x), int(ball.y)), BALL_RADIUS) # draw the ball
+
+    pygame.draw.circle(gameDisplay, RED, (int(ball.x), int(ball.y)), BALL_RADIUS)
+
     pygame.display.update()
 
+
+gameDisplay = pygame.display.set_mode((WIDTH, HEIGHT))
+
+
 def main():
+    global IS_JUMP
+
     running = True
-    ball = Ball()
 
     clock = pygame.time.Clock()
+
+    ball = Ball()
 
     while running:
 
         clock.tick(FPS)
 
         keys_pressed = pygame.key.get_pressed()
-        
+
         for event in pygame.event.get():
-            
             if event.type == pygame.QUIT:
                 running = False
-            
+                pygame.quit()
+                sys.exit(0)
             if event.type == pygame.KEYDOWN:
-                if (event.key == pygame.K_SPACE) and (round(ball.y,2) == ball.initial_y):
-                    time_count = time.time()
-                    ball.ball_ver_movement(time_count, 1)
+                if event.key == pygame.K_SPACE:
+                    IS_JUMP = True
+        ball.hor_movement(keys_pressed)
+        x = ball.ver_movement()
+        if(x is not 1):
+            draw_display(ball)
         
-        if(ball.ver_vel != 0):
-            time_count = time.time()
-            ball.ball_ver_movement(time_count)
-        ball.ball_hor_movement(keys_pressed)
-        draw_display(gameDisplay, ball, LIST_PLATFORM)
-    file1.close() 
     pygame.quit()
 
 if __name__ == '__main__':
