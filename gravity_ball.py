@@ -24,8 +24,8 @@ BALL_RADIUS = 20
 BALL_X_SPEED = 7
 # JUMP_NUMBER = 0
 # MAX_JUMP_NUMBER = 2 # giving the ball a double jump feature
-J_COUNT = 7
-MAX_J_COUNT = 7 # this is like the initial speed we are giving to the ball
+J_COUNT = 6
+MAX_J_COUNT = 6 # this is like the initial speed we are giving to the ball
 MUL_FACTOR = 1/2
 IS_JUMP = False
 
@@ -79,7 +79,7 @@ class Ball():
                 if(J_COUNT < 0):
                     neg = 1 # velocity is in the positive direction of y
                 self.y += (J_COUNT ** 2) * MUL_FACTOR * neg
-                J_COUNT -= 0.5 # we can change the gravity of the jump by changing the value we subtract here
+                J_COUNT -= 0.25 # we can change the gravity of the jump by changing the value we subtract here
                             # example if we change it like J_COUNT -= 0.5 gravity of the jump decreases
                             # example if we change it like J_COUNT -= 2 gravity of the jump increases
             else:
